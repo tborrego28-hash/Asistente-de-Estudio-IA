@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de estudio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF9F4;
+    --ink:#232323;
+    --ink-soft:#5C5A52;
+    --line:#D9D4C8;
+    --line-strong:#B9B2A2;
+    --sage:#5C7A5C;
+    --sage-bg:#E6EDE3;
+    --ocre:#C08A2E;
+    --ocre-bg:#F4E7CE;
+    --panel:#F2EEE3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+  /* SIDEBAR - pestañas de cuaderno */
+  .sidebar{
+    width:250px;
+    flex-shrink:0;
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    padding:28px 0 28px 0;
+    display:flex;
+    flex-direction:column;
+  }
+  .sidebar-header{
+    padding:0 22px 20px 22px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:8px;
+  }
+  .sidebar-header h1{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    font-weight:500;
+    margin:0 0 4px 0;
+  }
+  .sidebar-header p{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+  .subject-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    flex:1;
+    overflow-y:auto;
+  }
+  .subject-tab{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 22px;
+    cursor:pointer;
+    border-left:4px solid transparent;
+    font-size:14.5px;
+  }
+  .subject-tab:hover{ background:rgba(0,0,0,0.03); }
+  .subject-tab.active{
+    background:var(--paper);
+    border-left-color: var(--tab-color, var(--sage));
+    font-weight:500;
+  }
+  .swatch{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--tab-color, var(--sage));
+    flex-shrink:0;
+  }
+  .subject-name{ flex:1; }
+  .subject-pct{
+    font-size:12px;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+  .add-subject{
+    margin:14px 22px 0 22px;
+    padding:10px 12px;
+    border:1px dashed var(--line-strong);
+    background:transparent;
+    border-radius:2px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    text-align:left;
+  }
+  .add-subject:hover{ border-color:var(--ink-soft); color:var(--ink); }
+
+  /* MAIN */
+  .main{
+    flex:1;
+    padding:34px 44px 44px 44px;
+    max-width:760px;
+  }
+  .overview{
+    margin-bottom:32px;
+    padding-bottom:26px;
+    border-bottom:1px solid var(--line);
+  }
+  .overview h2{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:500;
+    margin:0 0 14px 0;
+  }
+  .overview-bars{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .overview-row{
+    display:grid;
+    grid-template-columns:120px 1fr 40px;
+    align-items:center;
+    gap:12px;
+    font-size:13px;
+  }
+  .overview-row .label{
+    color:var(--ink-soft);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .bar-track{
+    height:6px;
+    background:var(--line);
+    position:relative;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--row-color, var(--sage));
+  }
+  .overview-row .pct{
+    text-align:right;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .empty-state{
+    padding:60px 0;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  .empty-state h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    color:var(--ink);
+    font-size:19px;
+    margin-bottom:8px;
+  }
+
+  .subject-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .subject-header h2{
+    font-family:'Fraunces', serif;
+    font-size:24px;
+    font-weight:500;
+    margin:0;
+  }
+  .subject-header .del-subject{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12.5px;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .subject-progress-line{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+
+  .task-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .task-check{
+    width:18px; height:18px;
+    border:1.5px solid var(--line-strong);
+    flex-shrink:0;
+    margin-top:2px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--paper);
+  }
+  .task-check.done{
+    background:var(--sage);
+    border-color:var(--sage);
+    color:#fff;
+    font-size:12px;
+  }
+  .task-body{ flex:1; min-width:0; }
+  .task-text{
+    font-size:14.5px;
+    line-height:1.5;
+  }
+  .task-text.done{
+    color:var(--ink-soft);
+    text-decoration:line-through;
+  }
+  .task-meta{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .task-meta.due-soon{ color:var(--ocre); }
+  .task-del{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:12px;
+    cursor:pointer;
+    text-decoration:underline;
+    flex-shrink:0;
+    align-self:flex-start;
+    margin-top:3px;
+  }
+
+  .add-task-row{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  input[type="text"], input[type="date"]{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--line-strong);
+    background:var(--paper);
+    border-radius:2px;
+    color:var(--ink);
+  }
+  input[type="text"]:focus, input[type="date"]:focus{
+    outline:none;
+    border-color:var(--ink);
+  }
+  .add-task-row input[type="text"]{ flex:1; }
+  .add-task-row input[type="date"]{ width:150px; }
+  button.primary{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:14px;
+    padding:9px 16px;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  button.primary:hover{ background:#000; }
+
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(30,28,24,0.35);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal{
+    background:var(--paper);
+    border:1px solid var(--line-strong);
+    padding:26px;
+    width:320px;
+  }
+  .modal h3{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    margin:0 0 16px 0;
+    font-size:17px;
+  }
+  .modal input[type="text"]{ width:100%; margin-bottom:14px; }
+  .color-picker{
+    display:flex;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .color-dot{
+    width:24px; height:24px;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid transparent;
+  }
+  .color-dot.selected{ border-color:var(--ink); }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+  }
+  button.ghost{
+    background:none;
+    border:1px solid var(--line-strong);
+    padding:9px 14px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .error-text{
+    color:#A32D2D;
+    font-size:12.5px;
+    margin:-8px 0 12px 0;
+  }
+  .save-note{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>Plan de estudio</h1>
+      <p id="sidebar-sub">Sin materias todavía</p>
+    </div>
+    <ul class="subject-list" id="subject-list"></ul>
+    <button class="add-subject" id="add-subject-btn">+ Agregar materia</button>
+  </div>
+
+  <div class="main" id="main"></div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3>Nueva materia</h3>
+    <input type="text" id="new-subject-name" placeholder="Nombre de la materia">
+    <div class="error-text" id="subject-error" style="display:none;"></div>
+    <div class="color-picker" id="color-picker"></div>
+    <div class="modal-actions">
+      <button class="ghost" id="cancel-subject">Cancelar</button>
+      <button class="primary" id="confirm-subject">Crear</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#5C7A5C', '#C08A2E', '#B0563E', '#4A6C8C'];
+const STORAGE_KEY = 'plan-estudio-data';
+
+let state = { subjects: [], activeId: null };
+let selectedColor = COLORS[0];
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      if(parsed && Array.isArray(parsed.subjects)) state = parsed;
+    }
+  }catch(e){ /* no data yet */ }
+  if(!state.activeId && state.subjects.length){ state.activeId = state.subjects[0].id; }
+  render();
+}
+
+async function saveState(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+  }catch(e){ console.error('No se pudo guardar', e); }
+}
+
+function subjectProgress(subj){
+  if(!subj.tasks.length) return 0;
+  const done = subj.tasks.filter(t=>t.done).length;
+  return Math.round((done/subj.tasks.length)*100);
+}
+
+function overallProgress(){
+  const all = state.subjects.flatMap(s=>s.tasks);
+  if(!all.length) return 0;
+  return Math.round((all.filter(t=>t.done).length/all.length)*100);
+}
+
+function isSoon(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr + 'T00:00:00');
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const diffDays = (d-now)/(1000*60*60*24);
+  return diffDays >= 0 && diffDays <= 3;
+}
+
+function formatDate(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('es-AR', { day:'numeric', month:'short' });
+}
+
+function renderSidebar(){
+  const list = document.getElementById('subject-list');
+  list.innerHTML = '';
+  state.subjects.forEach(s=>{
+    const li = document.createElement('li');
+    li.className = 'subject-tab' + (s.id===state.activeId ? ' active' : '');
+    li.style.setProperty('--tab-color', s.color);
+    li.innerHTML = `<span class="swatch"></span><span class="subject-name">${escapeHtml(s.name)}</span><span class="subject-pct">${subjectProgress(s)}%</span>`;
+    li.addEventListener('click', ()=>{ state.activeId = s.id; render(); });
+    list.appendChild(li);
+  });
+  const sub = document.getElementById('sidebar-sub');
+  sub.textContent = state.subjects.length
+    ? `${state.subjects.length} materia${state.subjects.length>1?'s':''} · ${overallProgress()}% completado`
+    : 'Sin materias todavía';
+}
+
+function renderOverview(){
+  if(!state.subjects.length) return '';
+  const rows = state.subjects.map(s=>{
+    const pct = subjectProgress(s);
+    return `<div class="overview-row">
+      <span class="label">${escapeHtml(s.name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%; --row-color:${s.color};"></div></div>
+      <span class="pct">${pct}%</span>
+    </div>`;
+  }).join('');
+  return `<div class="overview">
+    <h2>Avance general</h2>
+    <div class="overview-bars">${rows}</div>
+  </div>`;
+}
+
+function renderMain(){
+  const main = document.getElementById('main');
+  const overviewHtml = renderOverview();
+
+  if(!state.subjects.length){
+    main.innerHTML = `<div class="empty-state">
+      <h2>Todavía no armaste tu plan</h2>
+      <p>Agregá una materia desde la izquierda para empezar a cargar temas y hacer seguimiento.</p>
+    </div>`;
+    return;
+  }
+
+  const subj = state.subjects.find(s=>s.id===state.activeId) || state.subjects[0];
+  state.activeId = subj.id;
+
+  const tasksHtml = subj.tasks.length ? subj.tasks.map(t=>{
+    const soon = !t.done && isSoon(t.due);
+    return `<div class="task-row" data-task="${t.id}">
+      <div class="task-check ${t.done?'done':''}" data-action="toggle">${t.done?'✓':''}</div>
+      <div class="task-body">
+        <div class="task-text ${t.done?'done':''}">${escapeHtml(t.text)}</div>
+        ${t.due ? `<div class="task-meta ${soon?'due-soon':''}">Fecha objetivo: ${formatDate(t.due)}${soon?' · próxima':''}</div>` : ''}
+      </div>
+      <button class="task-del" data-action="delete">Eliminar</button>
+    </div>`;
+  }).join('') : `<p style="color:var(--ink-soft); font-size:14px;">Sin temas cargados todavía.</p>`;
+
+  main.innerHTML = `
+    ${overviewHtml}
+    <div class="subject-header">
+      <h2>${escapeHtml(subj.name)}</h2>
+      <button class="del-subject" id="del-subject-btn">Eliminar materia</button>
+    </div>
+    <div class="subject-progress-line">${subj.tasks.filter(t=>t.done).length} de ${subj.tasks.length} temas completados · ${subjectProgress(subj)}%</div>
+    <div id="task-list">${tasksHtml}</div>
+    <div class="add-task-row">
+      <input type="text" id="new-task-text" placeholder="Nuevo tema o tarea">
+      <input type="date" id="new-task-date">
+      <button class="primary" id="add-task-btn">Agregar</button>
+    </div>
+    <div class="save-note">Se guarda automáticamente en este dispositivo.</div>
+  `;
+
+  document.getElementById('del-subject-btn').addEventListener('click', ()=>{
+    state.subjects = state.subjects.filter(s=>s.id!==subj.id);
+    state.activeId = state.subjects.length ? state.subjects[0].id : null;
+    saveState(); render();
+  });
+
+  document.getElementById('task-list').querySelectorAll('.task-row').forEach(row=>{
+    const tid = row.getAttribute('data-task');
+    row.querySelector('[data-action="toggle"]').addEventListener('click', ()=>{
+      const t = subj.tasks.find(x=>x.id===tid);
+      t.done = !t.done;
+      saveState(); render();
+    });
+    row.querySelector('[data-action="delete"]').addEventListener('click', ()=>{
+      subj.tasks = subj.tasks.filter(x=>x.id!==tid);
+      saveState(); render();
+    });
+  });
+
+  document.getElementById('add-task-btn').addEventListener('click', ()=>addTask(subj));
+  document.getElementById('new-task-text').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') addTask(subj);
+  });
+}
+
+function addTask(subj){
+  const textInput = document.getElementById('new-task-text');
+  const dateInput = document.getElementById('new-task-date');
+  const text = textInput.value.trim();
+  if(!text){
+    textInput.style.borderColor = '#A32D2D';
+    textInput.placeholder = 'Escribí un tema antes de agregar';
+    return;
+  }
+  subj.tasks.push({ id: uid(), text, due: dateInput.value || null, done:false });
+  saveState();
+  render();
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function render(){
+  renderSidebar();
+  renderMain();
+}
+
+// Modal de nueva materia
+const backdrop = document.getElementById('modal-backdrop');
+const colorPicker = document.getElementById('color-picker');
+COLORS.forEach(c=>{
+  const dot = document.createElement('div');
+  dot.className = 'color-dot' + (c===selectedColor?' selected':'');
+  dot.style.background = c;
+  dot.addEventListener('click', ()=>{
+    selectedColor = c;
+    colorPicker.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected'));
+    dot.classList.add('selected');
+  });
+  colorPicker.appendChild(dot);
+});
+
+document.getElementById('add-subject-btn').addEventListener('click', ()=>{
+  document.getElementById('new-subject-name').value = '';
+  document.getElementById('subject-error').style.display = 'none';
+  selectedColor = COLORS[0];
+  colorPicker.querySelectorAll('.color-dot').forEach((d,i)=>d.classList.toggle('selected', i===0));
+  backdrop.classList.add('open');
+  document.getElementById('new-subject-name').focus();
+});
+document.getElementById('cancel-subject').addEventListener('click', ()=>backdrop.classList.remove('open'));
+document.getElementById('confirm-subject').addEventListener('click', ()=>{
+  const nameInput = document.getElementById('new-subject-name');
+  const name = nameInput.value.trim();
+  const errEl = document.getElementById('subject-error');
+  if(!name){
+    errEl.textContent = 'Ingresá un nombre para la materia.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const id = uid();
+  state.subjects.push({ id, name, color: selectedColor, tasks: [] });
+  state.activeId = id;
+  backdrop.classList.remove('open');
+  saveState();
+  render();
+});
+document.getElementById('new-subject-name').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') document.getElementById('confirm-subject').click();
+});
+
+loadState();
+</script>
+</body>
+</html>
